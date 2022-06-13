@@ -10,10 +10,11 @@ from data import data, operations
 @app.callback(
     Output('example-graph', 'figure'),
     [Input('datasets', 'value'),
-    Input('axis-slider', 'value')],
+     Input('data-variables', 'value'),
+     Input('axis-slider', 'value')],
 )
-def update_graph(dataset_name, height):
-    return px.imshow(np.squeeze(data[dataset_name[0]])[height])
+def update_graph(dataset_names, variable, height):
+    return px.imshow(np.squeeze(data[dataset_names[0]][variable[0]])[height])
 
 @app.callback(
     Output('datasets', 'options'),
@@ -21,9 +22,10 @@ def update_graph(dataset_name, height):
     Input('operation-button', 'n_clicks'),
     State('datasets', 'value'),
     State('operation', 'value'),
+    State('data-variables', 'value'),
     prevent_initial_call=True
 )
-def generate_new_data(gclick, aclick, operands, operation):
+def generate_new_data(gclick, aclick, operands, operation, variable_names):
     button_id = ctx.triggered_id if not None else None
 
     if button_id == 'generate-button':
@@ -33,13 +35,21 @@ def generate_new_data(gclick, aclick, operands, operation):
 
     if button_id == 'operation-button':
         new_key = operations[operation].symbol.join(operands)
-        data.update(
-            {
-                new_key: operations[operation].operation(
-                    *[data[x] for x in operands]
-                )
-            }
-        )
+
+        new_dataset = data[operands[0]].copy(deep=True).drop(variable_names[0])
+
+        new_dataset_name = operations[operation].symbol.join(variable_names)
+
+        breakpoint()
+
+        new_dataset[new_dataset_name] = (new_dataset.dims, operations[operation].operation(
+            *[data[dataset][variable].data
+              for dataset, variable
+              in zip(operands, variable_names)]
+        ))
+
+        data.update({new_key: new_dataset})
+        breakpoint()
         return [x for x in data.keys()]
 
 @app.callback(
@@ -59,3 +69,16 @@ def update_line_graph(click_data, datasets):
 )
 def update_operation_button(operation):
     return operation.title()
+
+@app.callback(
+    Output('data-variables', 'options'),
+    Output('data-variables', 'value'),
+    Input('datasets', 'value')
+)
+def update_data_variables(dataset):
+    k = []
+
+    for ds in dataset:
+        k += [x for x in data[ds].keys()]
+
+    return k, k

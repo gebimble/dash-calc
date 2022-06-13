@@ -20,17 +20,27 @@ app.layout = html.Div(children=[
                 ),
                 dbc.Row(
                     [
-                        dbc.Col(dcc.Dropdown(keys:=[x for x in data.keys()], value=['0'],
-                                             multi=True, id='datasets'), width=6),
-                        dbc.Col(dcc.Dropdown(operation_keys:=[x for x in operations.keys()],
-                                             id='operation', value='add'), width=6)]
+                        dcc.Dropdown(data_keys:=[x for x in data['1'].keys()], value=data_keys,
+                                     multi=True, id='data-variables')
+                    ]
                 ),
                 dbc.Row(
-                    [dbc.Col(dbc.Button('Generate Data', id='generate-button', type='text'), width=6),
-                     dbc.Col(dbc.Button('add', id='operation-button', type='text'), width=6)]
+                    [
+                        dbc.Col(dcc.Dropdown(keys:=[x for x in data.keys()], value=['1'],
+                                             multi=True, id='datasets'), width=4),
+                        dbc.Col(dbc.Button('Generate Data', id='generate-button', type='text'), width=2),
+                    ]
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(dcc.Dropdown(operation_keys:=[x for x in operations.keys()],
+                                             id='operation', value='add'), width=4),
+                        dbc.Col(dbc.Button('add', id='operation-button',
+                                           type='text'), width=2),
+                    ]
                 )
             ]
-        ), 
+        ),
     )
 ])
 
