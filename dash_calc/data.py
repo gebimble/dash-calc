@@ -11,10 +11,10 @@ x = y = z = np.arange(length)
 
 data = [
     xr.Dataset(
-        data_vars={''.join(np.random.choice([x for x in ascii_letters], 10)): (['x', 'y', 'z'], d)},
+        data_vars={''.join(np.random.choice([x for x in ascii_letters], 10)):
+                   (['x', 'y', 'z'], np.random.random((10,10,10))) for _ in range(2)},
         coords={'x': x, 'y': y, 'z': z}
-        ) for d in np.random.random((2,10,10,10))
-    ]
+        ) for _ in range(2)]
 
 data = {str(i): d for i, d in enumerate(data, 1)}
 
