@@ -31,7 +31,12 @@ def update_data_variables_container(datasets):
     Input('axis-slider', 'value'),
 )
 def update_graph(dataset_names, variable, height):
-    return px.imshow(np.squeeze(data[dataset_names[0]][variable[0][0]])[height])
+    dataset = data[dataset_names[0]][variable[0][0]]
+    reduced_data = dataset.isel(z=height, drop=True)
+    try:
+        return px.imshow(reduced_data, zmax=float(dataset.max()))
+    except:
+        return {}
 
 @app.callback(
     Output('datasets', 'options'),
@@ -69,13 +74,16 @@ def generate_new_data(aclick, operands, operation, variable_names):
 def update_line_graph(click_data, datasets, variables):
     x, y = [click_data['points'][0][idx] for idx in ['x', 'y']]
 
-    points = {}
 
-    for d, vars in zip(datasets, variables):
-        for v in vars:
-            points.update({' - '.join([d, v]): data[d][v][x, y]})
+    points = {
+        d: data[d][v].sel(x=x, y=y, method='nearest', drop=True).to_dataframe()
+        for d, v in zip(datasets, variables)
+    }
 
-    return px.scatter(pd.DataFrame(points))
+    df = pd.concat(points, axis=1)
+    df.columns = pd.Index([' - '.join(x) for x in df.columns.to_flat_index()])
+
+    return px.scatter(df)
 
 @app.callback(
     Output('operation-button', 'children'),

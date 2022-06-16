@@ -10,10 +10,19 @@ app.layout = html.Div(children=[
     dbc.Card(
         dbc.CardBody(
             [
-                dbc.Row(dcc.Slider(0, 9, 1, id='axis-slider', value=0)),
+                dbc.Row(dcc.Slider(0, 9, 1, id='axis-slider', value=0,
+                                   updatemode='drag')),
                 dbc.Row(
                     [
-                        dbc.Col(dcc.Graph(id='example-graph', figure=fig), width=6),
+                        dbc.Col(
+                            dcc.Graph(
+                                id='example-graph', figure=fig,
+                                config={
+                                    'modeBarButtonsToAdd': ['select2d']
+                                }
+                            ),
+                            width=6
+                        ),
                         dbc.Col(dcc.Graph(id='line-graph', figure=line_fig), width=6)
                     ],
                     justify='evenly'
@@ -28,7 +37,6 @@ app.layout = html.Div(children=[
                                                              multi=True,
                                                              id='datasets',
                                                              placeholder='Select a dataset...')),
-                                        # dbc.Col(dbc.Button('Generate Data', id='generate-button', type='text')),
                                     ]
                                 ),
                                 dbc.Row(
@@ -49,9 +57,6 @@ app.layout = html.Div(children=[
                         dbc.Col(
                             [
                                 html.Div(children=[], id='data-variables-container')
-                                # dcc.Dropdown(data_keys:=[x for x in data['1'].keys()], value=data_keys,
-                                             # multi=True, id='data-variables',
-                                             # placeholder='Select a data variable...')
                             ],
                             width=6
                         )
