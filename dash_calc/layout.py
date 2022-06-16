@@ -1,3 +1,5 @@
+from itertools import combinations
+
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
@@ -10,8 +12,6 @@ app.layout = html.Div(children=[
     dbc.Card(
         dbc.CardBody(
             [
-                dbc.Row(dcc.Slider(0, 9, 1, id='axis-slider', value=0,
-                                   updatemode='drag')),
                 dbc.Row(
                     [
                         dbc.Col(
@@ -26,6 +26,29 @@ app.layout = html.Div(children=[
                         dbc.Col(dcc.Graph(id='line-graph', figure=line_fig), width=6)
                     ],
                     justify='evenly'
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.Div(children=[], id='axis-sliders-container')
+                            ],
+                            width=6
+                        ),
+                        dbc.Col(
+                            [
+                                dbc.Col(
+                                    dcc.Dropdown(
+                                        coords:=[', '.join(x) for x in combinations([x for x in data['1'].coords.keys()], 2)],
+                                        value=coords[0],
+                                        id='coords',
+                                        placeholder='Select a set of coordinates...'
+                                    )
+                                ),
+                            ],
+                            width=6
+                        )
+                    ]
                 ),
                 dbc.Row(
                     [

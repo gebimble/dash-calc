@@ -1,12 +1,21 @@
-from itertools import cycle
-import numpy as np
+from itertools import combinations
 import pandas as pd
-from dash import Input, Output, State, ctx, dcc, ALL
+from dash import Input, Output, State, dcc, ALL
 import plotly.express as px
 
 from main import app
 from data import data, operations
 
+
+def get_coords_for_sliders(coords, dataset):
+    split_coords = [x.strip() for x in coords.split(',')]
+
+    coords_for_sliders = [x for x in dataset.coords.keys()]
+
+    for c in split_coords:
+        coords_for_sliders.remove(c)
+
+    return coords_for_sliders
 
 @app.callback(
     Output('data-variables-container', 'children'),
@@ -25,14 +34,59 @@ def update_data_variables_container(datasets):
     ]
 
 @app.callback(
+    Output('axis-sliders-container', 'children'),
+    Input('datasets', 'value'),
+    Input('coords', 'value')
+)
+def update_axis_sliders_container(datasets, coords):
+    dataset = data[datasets[0]]
+
+    coords_for_sliders = get_coords_for_sliders(coords, dataset)
+
+    sliders = []
+
+    for c in coords_for_sliders:
+        coord = dataset.get_index(c)
+        c_min, c_max = [getattr(coord, m)() for m in ('min', 'max')]
+        marks = {f'{v:.2f}': f'{v:.2f}' for v in coord}
+
+        sliders.append(
+            dcc.Slider(min=c_min,
+                       max=c_max,
+                       value=c_min,
+                       marks=marks,
+                       id={
+                           'type': 'axis-sliders',
+                           'index': 0
+                       },
+                      )
+        )
+
+    return sliders
+
+@app.callback(
+    Output('coords', 'options'),
+    Output('coords', 'value'),
+    Input('datasets', 'value')
+)
+def update_coords(dataset):
+    coords = [', '.join(x) 
+              for x in combinations([x for x in data[dataset[0]].coords.keys()], 2)]
+    return coords, coords[0]
+
+
+@app.callback(
     Output('example-graph', 'figure'),
     Input('datasets', 'value'),
     Input({'type': 'data-variables', 'index': ALL}, 'value'),
-    Input('axis-slider', 'value'),
+    Input({'type': 'axis-sliders', 'index': ALL}, 'value'),
+    Input('coords', 'value')
 )
-def update_graph(dataset_names, variable, height):
+def update_graph(dataset_names, variable, sliders, coords):
     dataset = data[dataset_names[0]][variable[0][0]]
-    reduced_data = dataset.isel(z=height, drop=True)
+    coords_for_sliders = get_coords_for_sliders(coords, dataset)
+    selection_dict = {c: s for c, s in zip(coords_for_sliders, sliders)}
+    reduced_data = dataset.sel(**selection_dict, method='nearest', drop=True)
     try:
         return px.imshow(reduced_data, zmax=float(dataset.max()))
     except:
@@ -46,7 +100,7 @@ def update_graph(dataset_names, variable, height):
     State({'type': 'data-variables', 'index': ALL}, 'value'),
     prevent_initial_call=True
 )
-def generate_new_data(aclick, operands, operation, variable_names):
+def data_operation(aclick, operands, operation, variable_names):
 
     new_key = operations[operation].symbol.join(operands)
 
@@ -69,14 +123,26 @@ def generate_new_data(aclick, operands, operation, variable_names):
     Input('example-graph', 'clickData'),
     State('datasets', 'value'),
     State({'type': 'data-variables', 'index': ALL}, 'value'),
+    State({'type': 'axis-sliders', 'index': ALL}, 'value'),
+    State('coords', 'value'),
     prevent_initial_call=True
 )
-def update_line_graph(click_data, datasets, variables):
-    x, y = [click_data['points'][0][idx] for idx in ['x', 'y']]
+def update_line_graph(click_data, datasets, variables, slider_values, coords):
+    positions = [click_data['points'][0][idx] for idx in ['x', 'y']]
 
+    dataset = data[datasets[0]]
+    selection_coords = [x.strip() for x in coords.split(',')]
+    last_dim = get_coords_for_sliders(coords, dataset)[-1]
+    last_dim_dict = {last_dim: slider_values[-1]}
+
+
+    selection_dict = {c: p for c, p in zip(selection_coords, positions)}
 
     points = {
-        d: data[d][v].sel(x=x, y=y, method='nearest', drop=True).to_dataframe()
+        d: data[d][v].sel(**selection_dict,
+                          **last_dim_dict,
+                          method='nearest',
+                          drop=True).to_dataframe()
         for d, v in zip(datasets, variables)
     }
 

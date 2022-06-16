@@ -1,5 +1,6 @@
 from typing import Callable
 from string import ascii_letters
+from itertools import combinations
 
 import numpy as np
 from scipy.stats import multivariate_normal
@@ -10,6 +11,7 @@ from attrs import define
 length = 10
 
 data = []
+t = np.logspace(1, -1, 10)
 
 for _ in range(2):
     x, y, z = [np.sort(np.random.uniform(-0.5, 0.5, length)) for _ in range(3)]
@@ -18,16 +20,17 @@ for _ in range(2):
         xr.Dataset(
             data_vars={
                 str(i)+ ''.join(np.random.choice([x for x in ascii_letters], 10)):
-                (['x', 'y', 'z'],
-                 multivariate_normal.pdf(np.column_stack([d.flat for d in (xx,
+                (['x', 'y', 'z', 't'],
+                 (multivariate_normal.pdf(np.column_stack([d.flat for d in (xx,
                                                                            yy,
                                                                            zz)]),
-                                         mean=[0,0,0]).reshape((length, length,
+                                         mean=[0,0,0])[..., np.newaxis] * t).reshape((length, length,
+                                                                length,
                                                                 length)) +
-                 np.random.uniform(0, 0.001, (length, length, length)))
+                 np.random.uniform(0, 0.001, (length, length, length, length)))
                 for i in range(2)
             },
-            coords=dict(x=x, y=y, z=z)
+            coords=dict(x=x, y=y, z=z, t=t)
         )
     )
 
