@@ -8,6 +8,8 @@ import xarray as xr
 
 from attrs import define
 
+import plotly.graph_objects as go
+
 length = 10
 
 data = []

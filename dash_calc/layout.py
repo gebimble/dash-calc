@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 
 from main import app
 from data import data, operations
-from figures import fig, line_fig
+from figures import main_fig, line_fig, hist_fig
 
 
 app.layout = html.Div(children=[
@@ -16,14 +16,31 @@ app.layout = html.Div(children=[
                     [
                         dbc.Col(
                             dcc.Graph(
-                                id='example-graph', figure=fig,
+                                id='main-graph', figure=main_fig,
                                 config={
-                                    'modeBarButtonsToAdd': ['select2d']
-                                }
+                                    'modeBarButtons': [['select2d']]
+                                },
+                                style={'height': '80vh'}
                             ),
                             width=6
                         ),
-                        dbc.Col(dcc.Graph(id='line-graph', figure=line_fig), width=6)
+                        dbc.Col(
+                            dcc.Graph(
+                                id='line-graph',
+                                figure=line_fig,
+                                style={'height': '80vh'},
+                                config={
+                                    'modeBarButtons': [['select2d']]
+                                },
+                            )
+                            , width=3),
+                        dbc.Col(
+                            dcc.Graph(
+                                id='hist-graph',
+                                figure=hist_fig,
+                                style={'height': '80vh'}
+                            )
+                            , width=3)
                     ],
                     justify='evenly'
                 ),
@@ -31,9 +48,15 @@ app.layout = html.Div(children=[
                     [
                         dbc.Col(
                             [
+                                html.Div(children=[], id='axis-names-container')
+                            ],
+                            width=1
+                        ),
+                        dbc.Col(
+                            [
                                 html.Div(children=[], id='axis-sliders-container')
                             ],
-                            width=6
+                            width=5
                         ),
                         dbc.Col(
                             [

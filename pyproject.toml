@@ -12,6 +12,7 @@ numpy = "^1.22.4"
 dash-bootstrap-components = "^1.1.0"
 xarray = "^2022.3.0"
 scipy = "^1.8.1"
+dash-core-components = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
