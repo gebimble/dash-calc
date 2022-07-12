@@ -1,4 +1,6 @@
 from itertools import combinations
+
+import numpy as np
 import pandas as pd
 
 from dash import Input, Output, State, ALL
@@ -7,12 +9,16 @@ from dash import dcc, html
 import plotly.express as px
 import plotly.graph_objects as go
 
+import pyvista as pv
+
 from main import app
 from data import data, operations
 
 def split_coordinates(coords):
     return [x.strip() for x in coords.split(',')]
 
+
+pv.set_plot_theme('document')
 def get_coords_for_sliders(coords, dataset):
     split_coords = split_coordinates(coords)
 
@@ -33,10 +39,10 @@ def update_data_variables_container(datasets):
                      multi=True, #id='data-variables',
                      id={
                          'type': 'data-variables',
-                         'index': 0
+                         'index': i
                      },
                      placeholder=f'Select a data variable in dataset {d}...')
-        for d in datasets
+        for i, d in enumerate(datasets)
     ]
 
 @app.callback(
@@ -51,7 +57,8 @@ def update_axis_sliders_container(datasets, coords):
 
     sliders = []
 
-    for c in coords_for_sliders:
+    for i, c in enumerate(coords_for_sliders):
+
         coord = dataset.get_index(c)
         size, = coord.shape
         c_min, c_max = [getattr(coord, m)() for m in ('min', 'max')]
@@ -62,12 +69,18 @@ def update_axis_sliders_container(datasets, coords):
                        max=size-1,
                        value=c_min,
                        marks=marks,
+                       included=False,
                        id={
                            'type': 'axis-sliders',
-                           'index': 0
+                           'index': i
                        },
+                       tooltip={'placement': 'bottom', 'always_visible': True}
                       )
         )
+
+    sliders[0].id['index'] = -1  # no longer need to know the length of
+                                 # `sliders` for pattern matching 
+                                 # callbacks
 
     return sliders
 
@@ -102,12 +115,12 @@ def update_coords(dataset):
 @app.callback(
     Output('main-graph', 'figure'),
     Input('datasets', 'value'),
-    Input({'type': 'data-variables', 'index': ALL}, 'value'),
+    Input({'type': 'data-variables', 'index': 0}, 'value'),
     Input({'type': 'axis-sliders', 'index': ALL}, 'value'),
     Input('coords', 'value')
 )
 def update_graph(dataset_names, variable, sliders, coords):
-    dataset = data[dataset_names[0]][variable[0][0]]
+    dataset = data[dataset_names[0]][variable[0]]
     coords_for_sliders = get_coords_for_sliders(coords, dataset)
     selection_dict = {c: s for c, s in zip(coords_for_sliders, sliders)}
     reduced_data = dataset.sel(**selection_dict, method='nearest', drop=True)
@@ -150,18 +163,21 @@ def data_operation(aclick, operands, operation, variable_names):
     Input({'type': 'data-variables', 'index': ALL}, 'value'),
     Input({'type': 'axis-sliders', 'index': ALL}, 'value'),
     Input('coords', 'value'),
-    prevent_initial_call=True
 )
-def update_line_graph(click_data, datasets, variables, slider_values, coords):
-    positions = [click_data['points'][0][idx] for idx in ['x', 'y']]
+def update_line_graph(click_data, datasets, variables, slider_value, coords):
+    try:
+        positions = [click_data['points'][0][idx] for idx in ['x', 'y']]
+    except:
+        positions = [0.0, 0.0]
+
+    selection_coords = [x.strip() for x in coords.split(',')]
+    selection_dict = {c: p for c, p in zip(selection_coords, positions)}
 
     dataset = data[datasets[0]]
-    selection_coords = [x.strip() for x in coords.split(',')]
+
     last_dim = get_coords_for_sliders(coords, dataset)[-1]
-    last_dim_dict = {last_dim: slider_values[-1]}
+    last_dim_dict = {last_dim: slider_value[-1]}
 
-
-    selection_dict = {c: p for c, p in zip(selection_coords, positions)}
 
     points = {
         d: data[d][v].sel(**selection_dict,
@@ -174,7 +190,10 @@ def update_line_graph(click_data, datasets, variables, slider_values, coords):
     df = pd.concat(points, axis=1)
     df.columns = pd.Index([' - '.join(x) for x in df.columns.to_flat_index()])
 
-    return px.scatter(df, x=df.columns, y=df.index)
+    fig = px.scatter(df, x=df.columns, y=df.index)
+    fig.update_xaxes(autorange='reversed')
+
+    return fig
 
 @app.callback(
     Output('operation-button', 'children'),
@@ -216,8 +235,6 @@ def update_histogram_graph(main_selected, line_selected, datasets, variables, sl
     except:
         pass
 
-    slider_values = [x for x in sliders if x]
-
     slice_config.update(
         {
             slider_coords[-1]: slice(sliders[-1])
@@ -237,3 +254,27 @@ def update_histogram_graph(main_selected, line_selected, datasets, variables, sl
     fig.update_traces(opacity=0.5)
 
     return fig
+
+@app.callback(
+    Output('placeholder', 'children'),
+    Input('vtk-button', 'n_clicks'),
+    State('datasets', 'value'),
+    State({'type': 'data-variables', 'index': 0}, 'value'),
+    prevent_initial_call=True
+)
+def vtk_button(vclicks, datasets, variables):
+
+    dataset = data[datasets[0]][variables[0]].sel(t=0, method='nearest',
+                                                     drop=True)
+
+    coord_values = [d.values for d in dataset.coords.values()]
+
+    x, y, z = [np.hstack([-0.5, np.vstack([d[1:], d[:-1]]).mean(axis=0), 0.5])
+               for d in coord_values]
+
+    rect_grid = pv.RectilinearGrid(x, y, z)
+    rect_grid.cell_data[variables[0]] = dataset.values.flatten()
+
+    rect_grid.plot()
+
+    return []

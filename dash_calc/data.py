@@ -28,8 +28,8 @@ for _ in range(2):
                                                                            zz)]),
                                          mean=[0,0,0])[..., np.newaxis] * t).reshape((length, length,
                                                                 length,
-                                                                length)) +
-                 np.random.uniform(0, 0.001, (length, length, length, length)))
+                                                                10)) +
+                 np.random.uniform(0, 0.001, (length, length, length, 10)))
                 for i in range(2)
             },
             coords=dict(x=x, y=y, z=z, t=t)
