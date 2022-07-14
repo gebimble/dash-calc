@@ -1,0 +1,28 @@
+@startuml
+
+file Experiment as ex {
+
+    folder Dataset as ds {
+        collections DataPoints as dp
+        collections Coordinates as co
+        collections Values as val
+    }
+
+    component Metadata as met
+}
+
+rectangle Operations as op {
+
+    rectangle "plot_slice()" as ps
+    rectangle "plot_line()" as pl
+
+}
+
+ex -l- op
+
+dp *-- co
+dp *-- val
+
+ds o-- met
+
+@enduml
