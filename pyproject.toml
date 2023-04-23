@@ -16,6 +16,9 @@ dash-core-components = "^2.0.0"
 beautifulsoup4 = "^4.11.1"
 lxml = "^4.9.1"
 attrs = "^21.4.0"
+h5py = "^3.7.0"
+pylint = "^2.15.0"
+pyvista = "^0.38.5"
 
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"

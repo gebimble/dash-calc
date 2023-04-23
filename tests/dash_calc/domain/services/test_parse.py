@@ -28,6 +28,5 @@ def test_xml_parser_content_generated_from_fake_xml_file(FakeFile):
 
 def test_parser_content_generated_from_fake_xml_file(FakeFile):
     datasets, metadata = parse(FakeFile, parse_xml.parse)
-
     assert datasets and type(datasets) is dict
     assert metadata and type(metadata) is Metadata
