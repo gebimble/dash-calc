@@ -1,7 +1,5 @@
-from main import app
-import layout
-import callbacks
+from layout import app
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run_server(debug=True)

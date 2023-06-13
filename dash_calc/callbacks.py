@@ -65,7 +65,7 @@ def update_axis_sliders_container(datasets, coords):
 
         coord = dataset.get_index(c)
         (size,) = coord.shape
-        c_min, c_max = [getattr(coord, m)() for m in ("min", "max")]
+        c_min, c_max = (getattr(coord, m)() for m in ("min", "max"))
         marks = {i: f"{v:.2f}" for i, v in enumerate(coord)}
 
         sliders.append(
@@ -269,10 +269,10 @@ def vtk_button(vclicks, datasets, variables):
 
     coord_values = [d.values for d in dataset.coords.values()]
 
-    x, y, z = [
+    x, y, z = (
         np.hstack([-0.5, np.vstack([d[1:], d[:-1]]).mean(axis=0), 0.5])
         for d in coord_values
-    ]
+    )
 
     rect_grid = pv.RectilinearGrid(x, y, z)
     rect_grid.cell_data[variables[0]] = dataset.values.flatten()
